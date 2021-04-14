@@ -1,3 +1,5 @@
+// En este documento creo el componente del Select para hacerlo dinámico y que
+todos los ajustes por parte de éste no los maneje el componente padre.
 <template>
   <SelectWrapper class="select-wrapper">
     <SelectLabel v-bind:for="id">{{ !!label ? label : "" }}</SelectLabel>
@@ -16,6 +18,9 @@
 // Librerías
 import { PropType } from "vue";
 import { Options, Vue } from "vue-class-component";
+// Opté por la librería de styled-components porque me permite aislar
+// los estilos de CSS por elemento de HTML sin tener que clavarme
+// en las lógicas de los nombres de clases o IDs
 import styled from "vue3-styled-components";
 
 // Interfaces
@@ -75,6 +80,8 @@ const Select = styled.select`
     SelectLabel,
   },
 })
+
+// Utilizo la notación de clase por mi familiaridad con React
 export default class SelectComponent extends Vue {
   selectedOption: string = "";
 

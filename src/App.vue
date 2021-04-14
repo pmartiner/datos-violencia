@@ -67,6 +67,8 @@ const SelectsWrapper = styled.section`
     SelectsWrapper,
   },
 })
+// Primeras pruebas de métodos respondiendo a eventos y
+// relación entre componentes padre-hijo ante cambios en los datos
 export default class App extends Vue {
   hecho: string = "";
   estado: string = "";
