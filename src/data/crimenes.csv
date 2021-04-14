@@ -1,0 +1,80 @@
+id_crime,crime_name
+1,Homicidio doloso
+2,Suicidio
+3,Feminicidios (metodología DC)
+4,Investigaciones por abuso sexual
+5,Investigaciones por acoso sexual
+6,Investigaciones por feminicidio
+7,Investigaciones por homicidio culposo
+8,Investigaciones por homicidio doloso
+9,Investigaciones por hostigamiento sexual
+10,Investigaciones por lesiones culposas
+11,Investigaciones por lesiones dolosas
+12,Investigaciones por narcomenudeo
+13,Investigaciones por rapto
+14,Investigaciones por secuestro
+15,Investigaciones por tráfico de menores
+16,Investigaciones por trata de personas
+17,Investigaciones por violación equiparada
+18,Investigaciones por violación simple
+19,Investigaciones por violencia de género
+20,Investigaciones por violencia familiar
+21,Víctimas en carpetas de investigación por casos de extorsión
+22,Víctimas en carpetas de investigación por casos de feminicidio
+23,Víctimas en carpetas de investigación por casos de homicidio culposo
+24,Víctimas en carpetas de investigación por casos de homicidio doloso
+25,Víctimas en carpetas de investigación por casos de lesiones culposas
+26,Víctimas en carpetas de investigación por casos de lesiones dolosas
+27,Víctimas en carpetas de investigación por casos de rapto
+28,Víctimas en carpetas de investigación por casos de secuestro
+29,Víctimas en carpetas de investigación por casos de tráfico de menores
+30,Víctimas en carpetas de investigación por casos de trata de personas
+31,Llamadas de emergencia a nivel estatal por incidentes de violencia contra mujeres
+32,Llamadas de emergencia a nivel nacional por incidentes de violencia contra mujeres
+33,Total de casos positivos por COVID-19
+34,Total de casos positivos en mujeres embarazadas por COVID-19
+35,Total de defunciones por COVID-19
+36,Total de defunciones en mujeres embarazadas por COVID-19
+37,Total de personas desaparecidas a nivel estatal
+38,Total de embarazos infantiles
+39,Índice de rezago social
+40,Carencia por acceso a servicios de salud
+41,Carencia por servicios básicos en vivienda
+42,Carencia por acceso a seguridad social
+43,Pobreza extrema
+44,Pobreza moderada
+45,Carencia por rezago educativo
+46,Egresos hospitalarios por lesiones con armas de fuego
+47,Egresos hospitalarios por asfixia o ahorcamiento
+48,Egresos hospitalarios por lesiones
+49,Egresos hospitalarios por abuso sexual
+50,Asegurados mensuales
+51,Total de personas desaparecidas a nivel municipal
+52,Total de víctimas de agresiones según ENVIPE
+53,Personas víctimas de extorsión según ENVIPE
+54,Personas víctimas de hostigamiento sexual según ENVIPE
+55,Personas víctimas de lesiones según ENVIPE
+56,Personas víctimas de secuestro según ENVIPE
+57,Personas víctimas de violación según ENVIPE
+58,Personas que consideran insegura la entidad donde residen según ENVIPE
+59,Mujeres de 15 años o más que han sufrido al menos un incidente de abuso sexual
+60,Mujeres de 15 años o más que han sufrido al menos un incidente de acoso sexual
+61,Mujeres de 15 años o más que han sufrido al menos una cesarea sin consentimiento
+62,Mujeres de 15 años o más que han sufrido consecuencias económicas por embarazo
+63,Mujeres de 15 años o más que han sido esterelizadas o recibido un anticonceptivo sin consentimiento
+64,Mujeres de 15 años o más que han sido humilladas por ser mujer al menos una vez
+65,Mujeres de 15 años o más que han sufrido al menos un intento de violación
+66,Mujeres de 15 años o más que han sido lesionadas físcamente al menos una vez
+67,Mujeres de 15 años o más que han sufrido al menos un incidente de abuso sexual
+68,Mujeres de 15 años o más que han sido seguidas o vigiladas
+69,Mujeres de 15 años o más que han sufrido al menos una violación
+70,Personas desempleadas
+71,Personas autoadscriptas como afrodescendientes
+72,Personas autoadscriptas como indígenas
+73,Desocupación económica municipal
+74,Personas con acceso a drenaje en su vivienda
+75,Personas con acceso a electricidad en su vivienda
+76,Personas con acceso a electrodomésticos en su vivienda
+77,Inmigración estatal
+78,Inmigración municipal
+79,Lengua indígena
