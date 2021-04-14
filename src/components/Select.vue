@@ -52,7 +52,11 @@ const Select = styled.select`
   background-position-x: 100%;
   background-position-y: 50%;
   appearance: none;
-  min-width: 200px;
+  width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 15px;
 `;
 
 @Options({
