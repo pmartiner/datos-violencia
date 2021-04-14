@@ -19,8 +19,7 @@ todos los ajustes por parte de éste no los maneje el componente padre.
 import { PropType } from "vue";
 import { Options, Vue } from "vue-class-component";
 // Opté por la librería de styled-components porque me permite aislar
-// los estilos de CSS por elemento de HTML sin tener que clavarme
-// en las lógicas de los nombres de clases o IDs
+// los estilos de CSS por componente
 import styled from "vue3-styled-components";
 
 // Interfaces

@@ -1,20 +1,21 @@
 <template>
+  <h1>Datos de crímenes y hechos por municipio</h1>
   <SelectsWrapper>
-    <Select
+    <SelectComponent
       v-model="hecho"
       :id="'select1'"
       :label="'Hecho o agresión'"
       :options="optionsHechos"
       @change="onChange"
     />
-    <Select
+    <SelectComponent
       v-model="estado"
       :id="'select2'"
       :label="'Estado'"
       :options="optionsEstado"
       @change="onEstadoChange"
     />
-    <Select
+    <SelectComponent
       v-model="municipio"
       :id="'select3'"
       :label="'Municipio'"
@@ -22,23 +23,33 @@
       @change="onChange"
     />
   </SelectsWrapper>
+  <SpinnerLoader v-if="loading" />
+  <section v-else-if="!loading && dataResponse.length > 0">
+    {{ dataResponse }}
+  </section>
 </template>
 
 <script lang="ts">
 // Librerías
 import { Options, Vue } from "vue-class-component";
+// Opté por la librería de styled-components porque me permite aislar
+// los estilos de CSS por componente
 import styled from "vue3-styled-components";
 import { csv } from "d3-fetch";
 import _uniqBy from "lodash/uniqBy";
 
 // Interfaces
-import { Option } from "./interfaces/interfaces";
+import { Option, DataResponse } from "./interfaces/interfaces";
 
 // Componentes
-import Select from "./components/Select.vue";
+import SpinnerLoader from "./components/SpinnerLoader.vue";
+import SelectComponent from "./components/SelectComponent.vue";
 
 // Utils
-import request from "./utils/request";
+import { AxiosResponse } from "axios";
+
+// Api
+import fetchCrimenesByMunicipio from "./api/crimenesMunicipio";
 
 const SelectsWrapper = styled.section`
   display: flex;
@@ -47,13 +58,16 @@ const SelectsWrapper = styled.section`
 
 @Options({
   components: {
-    Select,
+    SelectComponent,
     SelectsWrapper,
+    SpinnerLoader,
   },
 })
 // Primeras pruebas de métodos respondiendo a eventos y
 // relación entre componentes padre-hijo ante cambios en los datos
 export default class App extends Vue {
+  loading: boolean = false;
+  dataResponse: DataResponse[] = [];
   hecho: string = "";
   estado: string = "";
   municipio: string = "";
@@ -65,20 +79,6 @@ export default class App extends Vue {
       name: "Por favor, seleccione un estado primero.",
     },
   ];
-
-  async apiCall() {
-    const response = await request(
-      "https://spotlight-unfpa.datacivica.org/api/v1/timeline",
-      "POST",
-      {
-        id_crime: parseInt(this.hecho),
-        id_ent: parseInt(this.estado),
-        id_mun1: parseInt(this.municipio),
-      }
-    );
-
-    console.log(response);
-  }
 
   mounted() {
     csv(
@@ -120,13 +120,39 @@ export default class App extends Vue {
     });
 
     if (this.hecho !== "" && this.estado !== "" && this.municipio !== "") {
-      this.apiCall();
+      this.loading = true;
+      return fetchCrimenesByMunicipio(
+        parseInt(this.hecho),
+        parseInt(this.estado),
+        parseInt(this.municipio)
+      )
+        .then((response) => {
+          console.log(response);
+          this.dataResponse = response.data;
+          return response;
+        })
+        .finally(() => {
+          this.loading = false;
+        });
     }
   }
 
   onChange() {
     if (this.hecho !== "" && this.estado !== "" && this.municipio !== "") {
-      this.apiCall();
+      this.loading = true;
+      return fetchCrimenesByMunicipio(
+        parseInt(this.hecho),
+        parseInt(this.estado),
+        parseInt(this.municipio)
+      )
+        .then((response: AxiosResponse<DataResponse[]>) => {
+          console.log(response);
+          this.dataResponse = response.data;
+          return response;
+        })
+        .finally(() => {
+          this.loading = false;
+        });
     }
   }
 }
@@ -138,6 +164,7 @@ export default class App extends Vue {
 }
 
 #app {
+  padding: 5px 25px;
   font-family: Open Sans, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
