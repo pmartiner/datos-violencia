@@ -30,6 +30,8 @@ const SelectWrapper = styled.div`
   flex-flow: column nowrap;
   max-width: 400px;
   padding-left: 5px;
+  padding-top: 15px;
+  padding-right: 5px;
 `;
 
 const SelectLabel = styled.label`
@@ -87,9 +89,5 @@ const Select = styled.select`
 // Utilizo la notación de clase por mi familiaridad con React
 export default class SelectComponent extends Vue {
   selectedOption: string = "";
-
-  onChange() {
-    console.log(this.selectedOption);
-  }
 }
 </script>

@@ -8,7 +8,7 @@ import { Options, Vue } from "vue-class-component";
 // los estilos de CSS por componente
 import styled from "vue3-styled-components";
 
-// Spinner tomado de
+// Spinner tomado de https://codepen.io/chris22smith/pen/gOpdmma
 const Spinner = styled.i`
   animation: spin 1s infinite linear;
   border: solid 2vmin transparent;

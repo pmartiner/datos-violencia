@@ -29,3 +29,8 @@ export interface ErrorResponse {
   routine: string;
   severity: string;
 }
+
+export interface MappedDataElement {
+  year: Date;
+  tasa_mun: number;
+}
