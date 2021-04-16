@@ -1,24 +1,26 @@
 # prueba-tecnica
+Este proyecto hace una petición a un servicio web para obtener los datos de un crimen, en este caso suicidio, dado un estado y un municipio. A partir de la respuesta, se grafica la tasa de este crimen por municipio en un rango de años.
 
-## Project setup
+
+## Configuración del proyecto
 ```
 yarn install
 ```
 
-### Compiles and hot-reloads for development
+### Compila y recarga para desarrollo
 ```
 yarn serve
 ```
 
-### Compiles and minifies for production
+### Compila y "minifica" para producción
 ```
 yarn build
 ```
 
-### Lints and fixes files
+### _Linting_ y correcciones de archivos
 ```
 yarn lint
 ```
 
 ### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+Ver la [documentación](https://cli.vuejs.org/config/).
