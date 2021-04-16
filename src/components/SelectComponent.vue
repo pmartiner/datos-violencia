@@ -58,6 +58,7 @@ const Select = styled.select`
   overflow: hidden;
   text-overflow: ellipsis;
   padding-right: 15px;
+  cursor: pointer;
 `;
 
 @Options({

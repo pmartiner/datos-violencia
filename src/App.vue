@@ -2,13 +2,13 @@
   <main>
     <AppTitle>Datos de crímenes y hechos por municipio</AppTitle>
     <SelectsWrapper>
-      <SelectComponent
+      <!-- <SelectComponent
         v-model="hecho"
         :id="'select1'"
         :label="'Hecho o agresión'"
         :options="optionsHechos"
         @change="onChange"
-      />
+      /> -->
       <SelectComponent
         v-model="estado"
         :id="'select2'"
@@ -21,14 +21,25 @@
         :id="'select3'"
         :label="'Municipio'"
         :options="optionsMunicipios"
-        @change="onChange"
+        @change="onMunicipioChange"
+      />
+      <SelectComponent
+        v-model="sort"
+        :id="'select4'"
+        :label="'Ordenar datos'"
+        :options="optionsSort"
+        @change="onSortChange"
       />
     </SelectsWrapper>
     <SpinnerLoader v-if="loading" />
-    <section v-else-if="!loading && dataResponse.length > 0">
-      <ChartTitle>{{ chartTitle }}</ChartTitle>
+    <section>
+      <ChartTitle v-if="!loading && dataResponse.length > 0">
+        {{ chartTitle }}
+      </ChartTitle>
       <ChartWrapper id="data-chart" />
-      <ChartSource>Fuente: Mortalidad general, INEGI</ChartSource>
+      <ChartSource v-if="!loading && dataResponse.length > 0">
+        Fuente: Mortalidad general, INEGI
+      </ChartSource>
     </section>
   </main>
 </template>
@@ -39,13 +50,19 @@ import { Options, Vue } from "vue-class-component";
 // Opté por la librería de styled-components porque me permite aislar
 // los estilos de CSS por componente
 import styled from "vue3-styled-components";
-import { csv } from "d3-fetch";
-import { scaleLinear, scaleTime } from "d3-scale";
-import { select } from "d3-selection";
-import { line } from "d3-shape";
-import { extent, max } from "d3-array";
-import { axisLeft, axisBottom } from "d3-axis";
 import _uniqBy from "lodash/uniqBy";
+import {
+  csv,
+  scaleLinear,
+  scaleTime,
+  line as d3Line,
+  extent,
+  max,
+  axisLeft,
+  axisBottom,
+  select,
+  easeLinear,
+} from "d3";
 
 // Interfaces
 import {
@@ -74,16 +91,6 @@ const ChartWrapper = styled.div`
   flex-flow: column wrap;
   padding-top: 50px;
   align-items: center;
-  animation: fadeIn 1.5s;
-
-  @keyframes fadeIn {
-    0% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
 `;
 
 const AppTitle = styled.h1`
@@ -104,6 +111,23 @@ const ChartSource = styled.h3`
   padding: 15px 0;
 `;
 
+const yearAccesor = (d: MappedDataElement) => d.year;
+const indicadorAccesor = (d: MappedDataElement) => d.tasa_mun;
+
+const width = 800;
+const height = 600;
+const margin = 25;
+const padding = 15;
+const adj = 35;
+
+let xScale: any = scaleTime().range([0, width]);
+let yScale: any = scaleLinear().rangeRound([height, 0]);
+
+if (window.innerWidth <= 480) {
+  yScale = scaleTime().range([height, 0]);
+  xScale = scaleLinear().rangeRound([0, width]);
+}
+
 @Options({
   components: {
     AppTitle,
@@ -119,15 +143,24 @@ const ChartSource = styled.h3`
 // relación entre componentes padre-hijo ante cambios en los datos
 export default class App extends Vue {
   loading: boolean = false;
-  windowWidth: number = window.innerWidth;
-  windowHeight: number = window.innerHeight;
   dataResponse: DataResponse[] = [];
-  hecho: string = "";
+  hecho: string = "2";
   estado: string = "";
   chartTitle: string = "";
   municipio: string = "";
+  sort: "asc" | "desc" = "asc";
   optionsHechos: Option[] = [];
   optionsEstado: Option[] = [];
+  optionsSort: Option[] = [
+    {
+      id: "asc",
+      name: "Ascendente",
+    },
+    {
+      id: "desc",
+      name: "Descendente",
+    },
+  ];
   optionsMunicipios: Option[] = [
     {
       id: "",
@@ -135,7 +168,130 @@ export default class App extends Vue {
     },
   ];
 
+  // Esta función inicializa los dominios de cada eje y devuelve su escala
+  initChart(data: MappedDataElement[]) {
+    const intervaloAnos = extent(data, yearAccesor) as Date[];
+    const intervaloIndicador = [0, max(data, indicadorAccesor)] as number[];
+
+    if (this.sort === "asc") {
+      xScale.domain(intervaloAnos);
+    } else {
+      xScale.domain(intervaloAnos.reverse());
+    }
+
+    yScale.domain(intervaloIndicador);
+
+    if (window.innerWidth <= 480) {
+      if (this.sort === "asc") {
+        yScale.domain(intervaloAnos);
+      } else {
+        yScale.domain(intervaloAnos.reverse());
+      }
+      xScale.domain(intervaloIndicador);
+    }
+
+    const ejeX = axisBottom(xScale);
+    const ejeY = axisLeft(yScale);
+
+    return {
+      ejeX,
+      ejeY,
+    };
+  }
+
+  // Esta función crea, prepara, los ejes de la gráfica
+  buildAxes() {
+    select(".line-chart").append("g").attr("class", "line-chart-yaxis");
+    select(".line-chart").append("g").attr("class", "line-chart-xaxis");
+  }
+
+  // Esta función crea, prepara, las líneas de la gráfica
+  buildLine() {
+    select(".line-chart").append("path").attr("class", "line-chart-line");
+  }
+
+  // Esta función pinta los ejes a base de las escalas de initChart(data)
+  drawAxes(ejeX: any, ejeY: any) {
+    select(".line-chart-xaxis")
+      .call(ejeX)
+      .style("transform", `translateY(${height}px)`);
+
+    select(".line-chart-yaxis").call(ejeY);
+  }
+
+  // Esta función pinta las líneas de la gráfica a partir de los datos
+  drawLine(data: MappedDataElement[]) {
+    let line = d3Line<MappedDataElement>()
+      .x((d) => xScale(yearAccesor(d)))
+      .y((d) => yScale(indicadorAccesor(d)));
+
+    if (window.innerWidth <= 480) {
+      line = d3Line<MappedDataElement>()
+        .x((d) => xScale(indicadorAccesor(d)))
+        .y((d) => yScale(yearAccesor(d)));
+    }
+
+    select(".line-chart-line")
+      .transition()
+      .duration(750)
+      .ease(easeLinear)
+      .attr("d", line(data) as string);
+  }
+
+  // Esta función vuelve a calcular la escala de Y a partir de los nuevos datos
+  adjustYScale(data: MappedDataElement[]) {
+    const intervaloAnos = extent(data, yearAccesor) as Date[];
+    const intervaloIndicador = [0, max(data, indicadorAccesor)] as number[];
+
+    yScale.domain(intervaloIndicador);
+
+    if (window.innerWidth <= 480) {
+      if (this.sort === "asc") {
+        yScale.domain(intervaloAnos);
+      } else {
+        yScale.domain(intervaloAnos.reverse());
+      }
+    }
+  }
+
+  // Esta función vuelve a calcular la escala de X a partir de los nuevos datos
+  adjustXScale(data: MappedDataElement[]) {
+    const intervaloAnos = extent(data, yearAccesor) as Date[];
+    const intervaloIndicador = [0, max(data, indicadorAccesor)] as number[];
+
+    if (this.sort === "asc") {
+      xScale.domain(intervaloAnos);
+    } else {
+      xScale.domain(intervaloAnos.reverse());
+    }
+
+    if (window.innerWidth <= 480) {
+      xScale.domain(intervaloIndicador);
+    }
+  }
+
+  // Esta función vuelve a pintar todo, pero con los nuevos datos
+  renderChanges(data: MappedDataElement[]) {
+    const ejes = this.initChart(data);
+    this.drawAxes(ejes?.ejeX, ejes?.ejeY);
+    this.drawLine(data);
+  }
+
   mounted() {
+    // Mapeo los datos útiles
+    const mappedData: MappedDataElement[] = this.dataResponse
+      .map((d) => ({
+        year: new Date(d.year, 0),
+        tasa_mun: parseFloat(d.tasa_mun1),
+      }))
+      .sort((a, b) => {
+        if (this.sort === "asc") {
+          return a.year.valueOf() - b.year.valueOf();
+        }
+
+        return b.year.valueOf() - a.year.valueOf();
+      });
+
     csv(
       "https://raw.githubusercontent.com/pmartiner/prueba-tecnica/main/src/data/crimenes.csv"
     ).then((data) => {
@@ -159,12 +315,49 @@ export default class App extends Vue {
 
       this.optionsEstado = [...estadosFiltered];
     });
+
+    // Preparo el SVG que contendrá a la gráfica
+    select("#data-chart")
+      .append("svg")
+      .attr("class", "line-chart")
+      .attr("preserveAspectRatio", "xMinYMin meet")
+      .attr("viewBox", `-${adj} -${adj} ${width + adj * 3} ${height + adj * 3}`)
+      .style("padding", padding)
+      .style("margin", margin)
+      .style("display", "none")
+      .classed("svg-content", true);
+
+    // Inicializo la gráfica
+    this.buildAxes();
+    this.buildLine();
+    this.renderChanges(mappedData);
   }
 
   onWindowResize() {
-    this.windowWidth = window.innerWidth;
-    this.windowHeight = window.innerHeight;
-    console.log(this.windowWidth, this.windowHeight);
+    const svg = document.getElementsByClassName("line-chart");
+
+    // Ajusto el tamaño del SVG de la gráfica dependiendo del ancho de la ventana
+    if (svg.length > 0) {
+      const newWidth = window.innerWidth > 800 ? 800 : window.innerWidth;
+      const newHeight = window.innerHeight > 800 ? 800 : window.innerHeight;
+      select("#data-chart").attr(
+        "viewBox",
+        `-${adj} 
+        -${adj} 
+        ${newWidth + adj * 3} 
+        ${newHeight + adj * 3}`
+      );
+
+      xScale = scaleTime().range([0, width]);
+      yScale = scaleLinear().rangeRound([height, 0]);
+
+      if (window.innerWidth <= 480) {
+        yScale = scaleTime().range([height, 0]);
+        xScale = scaleLinear().rangeRound([0, width]);
+      }
+
+      this.$forceUpdate();
+    }
   }
 
   created() {
@@ -176,100 +369,38 @@ export default class App extends Vue {
   }
 
   updated() {
-    if (this.dataResponse.length > 0) {
-      const width = this.windowWidth;
-      const height = this.windowHeight * 0.8;
-      const margin = 5;
-      const padding = 5;
-      const adj = 35;
-      const mappedData: MappedDataElement[] = this.dataResponse
-        .map((d) => ({
-          year: new Date(d.year, 0),
-          tasa_mun: parseFloat(d.tasa_mun1),
-        }))
-        .sort((a, b) => a.year.valueOf() - b.year.valueOf());
+    // Mapeo los datos útiles
+    const mappedData: MappedDataElement[] = this.dataResponse
+      .map((d) => ({
+        year: new Date(d.year, 0),
+        tasa_mun: parseFloat(d.tasa_mun1),
+      }))
+      // Ascendente
+      .sort((a, b) => {
+        if (this.sort === "asc") {
+          return a.year.valueOf() - b.year.valueOf();
+        }
 
-      // Creo al SVG que contendrá la gráfica
+        return b.year.valueOf() - a.year.valueOf();
+      });
 
-      const svg = select("#data-chart")
-        .append("svg")
-        .attr("preserveAspectRatio", "xMinYMin meet")
-        .attr(
-          "viewBox",
-          `-${adj} -${adj} ${width + adj * 3} ${height + adj * 3}`
-        )
-        .style("padding", padding)
-        .style("margin", margin)
-        .classed("svg-content", true);
-
-      const yearAccesor = (d: MappedDataElement) => d.year;
-      const indicadorAccesor = (d: MappedDataElement) => d.tasa_mun;
-
-      // Creo el rango de la escala para poder posicionar los datos y el eje
-      // El eje de las x será, si el ancho de la pantalla es mayor a 480px, el de los años
-      // El eje de las y será el del indicador
-      // Estos se invertirán si el ancho de pantalla es menor a 480px
-      let xScale: any = scaleTime().range([0, width]);
-      let yScale: any = scaleLinear().rangeRound([height, 0]);
-
-      if (this.windowWidth <= 480) {
-        yScale = scaleTime().range([height, 0]);
-        xScale = scaleLinear().rangeRound([0, width]);
-      }
-
+    // Tomo el título a partir del ID del crimen
+    if (mappedData.length > 0) {
       const intervaloAnos = extent(mappedData, yearAccesor) as Date[];
-      const intervaloIndicador = [
-        0,
-        max(mappedData, indicadorAccesor),
-      ] as number[];
 
       this.chartTitle = `Tasa total de ${
         this.optionsHechos.find((h) => h.id === this.hecho)?.name
       } por municipio de ${intervaloAnos[0].getFullYear()} a ${intervaloAnos[1].getFullYear()}`;
+    }
 
-      xScale.domain(intervaloAnos);
-      yScale.domain(intervaloIndicador);
+    // Actualizo los datos
+    this.adjustYScale(mappedData);
+    this.adjustXScale(mappedData);
+    this.renderChanges(mappedData);
 
-      if (this.windowWidth <= 480) {
-        yScale.domain(intervaloAnos);
-        xScale.domain(intervaloIndicador);
-      }
-
-      const ejeX = axisBottom(xScale);
-      const ejeY = axisLeft(yScale);
-
-      // Para rotar etiquetas lo saqué de aquí: http://www.d3noob.org/2013/01/how-to-rotate-text-labels-for-x-axis-of.html
-      svg
-        .append("g")
-        .attr("class", "axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(ejeX)
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(-65)");
-
-      svg.append("g").attr("class", "axis").call(ejeY);
-
-      // Constructor de las lineas el cual, dado un dato tipo MappedDataElement, me regresa un valor del plano
-      let lineElement = line<MappedDataElement>()
-        .x((d) => xScale(yearAccesor(d)))
-        .y((d) => yScale(indicadorAccesor(d)));
-
-      if (this.windowWidth <= 480) {
-        lineElement = line<MappedDataElement>()
-          .x((d) => xScale(indicadorAccesor(d)))
-          .y((d) => yScale(yearAccesor(d)));
-      }
-
-      // Mappeo los puntos a una recta con elementos SVG;
-      svg
-        .selectAll("lines")
-        .data(mappedData)
-        .join("g")
-        .append("path")
-        .attr("d", lineElement(mappedData) as string);
+    // Muestro la gráfica si todo cargó
+    if (this.loading === false && mappedData.length) {
+      select("#data-chart").select("svg").style("display", "flex");
     }
   }
 
@@ -288,6 +419,8 @@ export default class App extends Vue {
     });
 
     if (this.hecho !== "" && this.estado !== "" && this.municipio !== "") {
+      select("#data-chart").select("svg").style("display", "none");
+
       this.loading = true;
       // Llamada al servicio web
       return fetchCrimenesByMunicipio(
@@ -305,8 +438,10 @@ export default class App extends Vue {
     }
   }
 
-  onChange() {
+  onMunicipioChange() {
     if (this.hecho !== "" && this.estado !== "" && this.municipio !== "") {
+      select("#data-chart").select("svg").style("display", "none");
+
       this.loading = true;
       // Llamada al servicio web
       return fetchCrimenesByMunicipio(
@@ -323,6 +458,10 @@ export default class App extends Vue {
         });
     }
   }
+
+  onSortChange() {
+    this.$forceUpdate();
+  }
 }
 </script>
 
@@ -338,14 +477,9 @@ export default class App extends Vue {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.axis line {
-  stroke: #706f6f;
-  stroke-width: 1.5;
-  shape-rendering: crispEdges;
-}
-
 /* axis contour */
-.axis path {
+path.line-chart-yaxis,
+path.line-chart-xaxis {
   stroke: #706f6f;
   stroke-width: 1.5;
   shape-rendering: crispEdges;
@@ -358,9 +492,22 @@ export default class App extends Vue {
   font-size: 120%;
 }
 
-path {
+path.line-chart-line {
   fill: none;
   stroke: mediumpurple;
   stroke-width: 1.8;
+}
+
+.line-chart {
+  animation: fadeIn 1.5s;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
 }
 </style>
